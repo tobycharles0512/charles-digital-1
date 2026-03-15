@@ -1273,8 +1273,8 @@ const SignupScreen = () => {
   };
 
   const handleSignup = () => {
-    if (!form.firstName || !form.lastName || !form.email || !form.phone || !form.password) {
-      setErr("Please fill in all fields");
+    if (!form.firstName?.trim() || !form.lastName?.trim() || !form.email?.trim() || !form.password?.trim()) {
+      setErr("Please fill in: First Name, Last Name, Email, and Password");
       return;
     }
     if (form.password !== form.confirm) {
