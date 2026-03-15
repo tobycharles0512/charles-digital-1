@@ -1176,7 +1176,12 @@ const Avatar = ({ user, size = 40, onClick }) => {
   return /* @__PURE__ */ React.createElement("div", { style: s, onClick }, user ? initials(user) : "?");
 };
 const Spinner = () => /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "center", padding: 40 } }, /* @__PURE__ */ React.createElement("div", { style: { width: 36, height: 36, border: "3px solid rgba(0,255,65,0.3)", borderTopColor: "#00ff41", borderRadius: "50%", animation: "spin 0.8s linear infinite" } }));
-const Input = ({ label, value, onChange, ...props }) => /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 14 } }, label && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.6)", marginBottom: 6 } }, label), /* @__PURE__ */ React.createElement("input", { className: "input-field", value: value || "", onChange: onChange, ...props }));
+const Input = ({ label, value, onChange, ...props }) => {
+  const handleChange = (e) => {
+    if (onChange) onChange(e);
+  };
+  return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 14 } }, label && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.6)", marginBottom: 6 } }, label), /* @__PURE__ */ React.createElement("input", { className: "input-field", value: value || "", onChange: handleChange, ...props }));
+};
 const TextArea = ({ label, ...props }) => /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 14 } }, label && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.6)", marginBottom: 6 } }, label), /* @__PURE__ */ React.createElement("textarea", { className: "input-field", style: { resize: "vertical", minHeight: 80, ...props.style || {} }, ...props }));
 const Toast = ({ msg, type = "success" }) => /* @__PURE__ */ React.createElement("div", { style: { position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", background: type === "error" ? "#dc2626" : "#16a34a", color: "#fff", padding: "10px 20px", borderRadius: 30, fontSize: 14, fontWeight: 600, zIndex: 9999, animation: "fadeIn 0.3s ease", whiteSpace: "nowrap", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" } }, msg);
 const BottomNav = ({ screen, navigate }) => {
