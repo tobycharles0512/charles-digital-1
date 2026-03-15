@@ -1254,10 +1254,13 @@ const LoginScreen = () => {
   return /* @__PURE__ */ React.createElement("div", { className: "screen", style: { background: "linear-gradient(180deg,#0d0d0d 0%,#0d0d0d 100%)", display: "flex", flexDirection: "column" } }, /* @__PURE__ */ React.createElement("div", { style: { padding: "60px 24px 30px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 50, marginBottom: 12, filter: "drop-shadow(0 0 20px rgba(0,255,65,0.6))" } }, "\u{1F389}"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 36, fontWeight: 900, background: "linear-gradient(135deg,#00ff41,#00d944)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" } }, "Welcome Back"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15, color: "rgba(255,255,255,0.5)", marginTop: 6 } }, "Sign in to Partico")), /* @__PURE__ */ React.createElement("div", { style: { padding: "0 24px", flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { marginBottom: 16 } }, err && /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.4)", borderRadius: 10, padding: "10px 14px", fontSize: 14, color: "#f87171", marginBottom: 14 } }, err), /* @__PURE__ */ React.createElement(Input, { label: "Email Address", type: "email", placeholder: "your@email.com", value: email, onChange: (e) => setEmail(e.target.value), autoComplete: "email" }), /* @__PURE__ */ React.createElement(Input, { label: "Password", type: "password", placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022", value: password, onChange: (e) => setPassword(e.target.value), autoComplete: "current-password" }), /* @__PURE__ */ React.createElement("button", { className: "btn-primary", onClick: handleLogin, disabled: loading, style: { marginTop: 8 } }, loading ? "Signing in..." : "Sign In \u{1F38A}")), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", fontSize: 14, color: "rgba(255,255,255,0.5)", marginBottom: 8 } }, "Don't have an account?", " ", /* @__PURE__ */ React.createElement("span", { onClick: () => navigate("signup"), style: { color: "#00ff41", fontWeight: 600, cursor: "pointer" } }, "Sign Up")), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.3)" } }, /* @__PURE__ */ React.createElement("span", { onClick: () => navigate("landing"), style: { cursor: "pointer" } }, "\u2190 Back to welcome page")), /* @__PURE__ */ React.createElement("div", { className: "card", style: { marginTop: 20, background: "rgba(124,58,237,0.1)" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "#00d944", marginBottom: 8 } }, "\u{1F4F1} Add Partico to your Home Screen"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 } }, /* @__PURE__ */ React.createElement("b", { style: { color: "rgba(255,255,255,0.7)" } }, "iPhone:"), ' Tap Share \u2192 "Add to Home Screen"', /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("b", { style: { color: "rgba(255,255,255,0.7)" } }, "Android:"), ' Tap Menu \u2192 "Add to Home Screen"'))));
 };
 const SignupScreen = () => {
-  const { register, navigate } = useApp();
+  const { navigate, login } = useApp();
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", password: "", confirm: "", profilePic: null });
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [showVerification, setShowVerification] = useState(false);
+  const [tempUserId, setTempUserId] = useState("");
   const fileRef = useRef(null);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const pickPhoto = () => fileRef.current?.click();
@@ -1268,6 +1271,7 @@ const SignupScreen = () => {
     reader.onload = (ev) => set("profilePic", ev.target.result);
     reader.readAsDataURL(file);
   };
+
   const handleSignup = () => {
     if (!form.firstName || !form.lastName || !form.email || !form.phone || !form.password) {
       setErr("Please fill in all fields");
@@ -1281,17 +1285,76 @@ const SignupScreen = () => {
       setErr("Password must be at least 6 characters");
       return;
     }
+
     setLoading(true);
     setErr("");
-    setTimeout(() => {
-      const res = register(form);
-      setLoading(false);
-      if (res.error) {
-        setErr(res.error);
-      } else {
-        navigate("home");
-      }
-    }, 500);
+
+    // Call backend signup endpoint
+    fetch("https://partico-backend-production.up.railway.app/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        confirm: form.confirm
+      })
+    })
+      .then(r => r.json())
+      .then(data => {
+        setLoading(false);
+        if (data.error) {
+          setErr(data.error);
+        } else {
+          setTempUserId(data.tempUserId);
+          setShowVerification(true);
+          setErr("");
+        }
+      })
+      .catch(e => {
+        setLoading(false);
+        setErr("Network error: " + e.message);
+      });
+  };
+
+  const handleVerify = () => {
+    if (!verificationCode.trim()) {
+      setErr("Please enter the verification code");
+      return;
+    }
+
+    setLoading(true);
+    setErr("");
+
+    fetch("https://partico-backend-production.up.railway.app/api/auth/verify-signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: form.email,
+        code: verificationCode.toUpperCase()
+      })
+    })
+      .then(r => r.json())
+      .then(data => {
+        setLoading(false);
+        if (data.error) {
+          setErr(data.error);
+        } else {
+          // Login with the verified credentials
+          const loginRes = login(form.email, form.password);
+          if (loginRes.error) {
+            setErr(loginRes.error);
+          } else {
+            navigate("home");
+          }
+        }
+      })
+      .catch(e => {
+        setLoading(false);
+        setErr("Network error: " + e.message);
+      });
   };
   return /* @__PURE__ */ React.createElement("div", { className: "screen", style: { background: "linear-gradient(180deg,#0d0d0d 0%,#0d0d0d 100%)" } }, /* @__PURE__ */ React.createElement("div", { style: { padding: "50px 24px 24px" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 28, fontWeight: 900, background: "linear-gradient(135deg,#00ff41,#00d944)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 } }, "Create Account \u{1F389}"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, color: "rgba(255,255,255,0.5)" } }, "Join the Partico community")), /* @__PURE__ */ React.createElement("div", { style: { padding: "0 24px 100px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", marginBottom: 24 } }, /* @__PURE__ */ React.createElement("div", { onClick: pickPhoto, style: { width: 90, height: 90, borderRadius: "50%", background: "rgba(0,255,65,0.2)", border: "2px dashed rgba(0,255,65,0.5)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden" } }, form.profilePic ? /* @__PURE__ */ React.createElement("img", { src: form.profilePic, style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 28 } }, "\u{1F4F7}"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 } }, "Add photo"))), /* @__PURE__ */ React.createElement("input", { ref: fileRef, type: "file", accept: "image/*", style: { display: "none" }, onChange: onFile })), /* @__PURE__ */ React.createElement("div", { className: "card" }, err && /* @__PURE__ */ React.createElement("div", { style: { background: "rgba(220,38,38,0.15)", border: "1px solid rgba(220,38,38,0.4)", borderRadius: 10, padding: "10px 14px", fontSize: 14, color: "#f87171", marginBottom: 14 } }, err), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 0 } }, /* @__PURE__ */ React.createElement(Input, { label: "First Name", placeholder: "Jane", value: form.firstName, onChange: (e) => set("firstName", e.target.value) }), /* @__PURE__ */ React.createElement(Input, { label: "Last Name", placeholder: "Smith", value: form.lastName, onChange: (e) => set("lastName", e.target.value) })), /* @__PURE__ */ React.createElement(Input, { label: "Email Address", type: "email", placeholder: "jane@email.com", value: form.email, onChange: (e) => set("email", e.target.value) }), /* @__PURE__ */ React.createElement(Input, { label: "Phone Number", type: "tel", placeholder: "+44 7700 000000", value: form.phone, onChange: (e) => set("phone", e.target.value) }), /* @__PURE__ */ React.createElement(Input, { label: "Password", type: "password", placeholder: "Min. 6 characters", value: form.password, onChange: (e) => set("password", e.target.value) }), /* @__PURE__ */ React.createElement(Input, { label: "Confirm Password", type: "password", placeholder: "Repeat password", value: form.confirm, onChange: (e) => set("confirm", e.target.value) }), /* @__PURE__ */ React.createElement("button", { className: "btn-primary", onClick: handleSignup, disabled: loading, style: { marginTop: 8 } }, loading ? "Creating account..." : "Create Account \u{1F38A}")), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 16 } }, "Already have an account?", " ", /* @__PURE__ */ React.createElement("span", { onClick: () => navigate("login"), style: { color: "#00ff41", fontWeight: 600, cursor: "pointer" } }, "Sign In"))));
 };
