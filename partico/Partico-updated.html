@@ -1287,15 +1287,14 @@ const SignupScreen = () => {
   };
 
   const handleSignup = () => {
-    // Query DOM directly for input values
-    const inputs = document.querySelectorAll('.input-field');
-    const firstName = inputs[0]?.value?.trim();
-    const lastName = inputs[1]?.value?.trim();
-    const email = inputs[2]?.value?.trim();
-    const username = inputs[3]?.value?.trim();
-    const phone = inputs[4]?.value?.trim();
-    const password = inputs[5]?.value?.trim();
-    const confirm = inputs[6]?.value?.trim();
+    // Get values from refs
+    const firstName = firstNameRef.current?.value?.trim();
+    const lastName = lastNameRef.current?.value?.trim();
+    const email = emailRef.current?.value?.trim();
+    const username = usernameRef.current?.value?.trim();
+    const phone = phoneRef.current?.value?.trim();
+    const password = passwordRef.current?.value?.trim();
+    const confirm = confirmRef.current?.value?.trim();
 
     if (!firstName || !lastName || !email || !username || !password) {
       setErr("Please fill in: First Name, Last Name, Email, Username, and Password");
