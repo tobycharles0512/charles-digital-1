@@ -1307,7 +1307,7 @@ const SignupScreen = () => {
     if (!phone) { console.log('ERROR: Phone required'); setErr("Phone required"); return; }
     if (!password) { console.log('ERROR: Password required'); setErr("Password required"); return; }
     if (!confirm) { console.log('ERROR: Confirm Password required'); setErr("Confirm Password required"); return; }
-    console.log('All field validations passed!');
+    console.log('All field validations passed!'); // Trigger redeploy
 
     if (username.length < 3) {
       setErr("Username must be at least 3 characters");
