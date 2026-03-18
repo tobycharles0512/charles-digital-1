@@ -1287,25 +1287,27 @@ const SignupScreen = () => {
       console.log(`Input ${i}: value="${inp.value}", placeholder="${inp.placeholder}"`);
     });
 
-    const firstName = inputs[0]?.value?.trim() || '';
-    const lastName = inputs[1]?.value?.trim() || '';
-    const email = inputs[2]?.value?.trim() || '';
-    const username = inputs[3]?.value?.trim() || '';
-    const phone = inputs[4]?.value?.trim() || '';
-    const password = inputs[5]?.value?.trim() || '';
-    const confirm = inputs[6]?.value?.trim() || '';
+    const firstName = (inputs[0]?.value?.trim() || '').toString();
+    const lastName = (inputs[1]?.value?.trim() || '').toString();
+    const email = (inputs[2]?.value?.trim() || '').toString();
+    const username = (inputs[3]?.value?.trim() || '').toString();
+    const phone = (inputs[4]?.value?.trim() || '').toString();
+    const password = (inputs[5]?.value?.trim() || '').toString();
+    const confirm = (inputs[6]?.value?.trim() || '').toString();
 
     // Debug logging
-    console.log('Form values:', { firstName, lastName, email, username, phone, password, confirm });
+    console.log('Extracted values:', { firstName: `[${firstName}]`, lastName: `[${lastName}]`, email: `[${email}]`, username: `[${username}]`, phone: `[${phone}]`, password: `[${password}]`, confirm: `[${confirm}]` });
+    console.log('Validation checks - firstName:', !firstName, 'lastName:', !lastName, 'email:', !email, 'username:', !username, 'phone:', !phone, 'password:', !password, 'confirm:', !confirm);
 
     // Validate all fields are filled
-    if (!firstName) { setErr("First Name required"); return; }
-    if (!lastName) { setErr("Last Name required"); return; }
-    if (!email) { setErr("Email required"); return; }
-    if (!username) { setErr("Username required"); return; }
-    if (!phone) { setErr("Phone required"); return; }
-    if (!password) { setErr("Password required"); return; }
-    if (!confirm) { setErr("Confirm Password required"); return; }
+    if (!firstName) { console.log('ERROR: First Name required'); setErr("First Name required"); return; }
+    if (!lastName) { console.log('ERROR: Last Name required'); setErr("Last Name required"); return; }
+    if (!email) { console.log('ERROR: Email required'); setErr("Email required"); return; }
+    if (!username) { console.log('ERROR: Username required'); setErr("Username required"); return; }
+    if (!phone) { console.log('ERROR: Phone required'); setErr("Phone required"); return; }
+    if (!password) { console.log('ERROR: Password required'); setErr("Password required"); return; }
+    if (!confirm) { console.log('ERROR: Confirm Password required'); setErr("Confirm Password required"); return; }
+    console.log('All field validations passed!');
 
     if (username.length < 3) {
       setErr("Username must be at least 3 characters");
