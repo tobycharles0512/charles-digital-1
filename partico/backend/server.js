@@ -55,9 +55,14 @@ async function sendEmail(to, subject, html) {
 // Signup: Send verification email
 app.post('/api/auth/signup', async (req, res) => {
   try {
+    console.log('=== SIGNUP REQUEST ===');
+    console.log('req.body:', JSON.stringify(req.body, null, 2));
     const { email, username, firstName, lastName, phone, password } = req.body;
+    console.log('Extracted:', { email, username, firstName, lastName, phone, password });
 
     if (!email || !password || !username || !firstName || !lastName || !phone) {
+      console.log('Validation failed - missing fields');
+      console.log('Checks:', { email: !email, password: !password, username: !username, firstName: !firstName, lastName: !lastName, phone: !phone });
       return res.status(400).json({ error: 'All fields required' });
     }
 
