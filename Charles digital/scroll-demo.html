@@ -500,6 +500,21 @@ footer p{font-size:.72rem;color:var(--dim)}
         </div>
       </div>
     </div>
+    <div class="port-card tilt" id="pc1" onclick="openPreview('forge')">
+      <div class="prem-badge">✦ Premium Build</div>
+      <div class="port-preview">
+        <div class="forge-bg" style="background:linear-gradient(135deg, #2d1810 0%, #4a2f1f 100%);display:flex;align-items:center;justify-content:center;color:#d4af37;font-size:3rem;font-weight:bold;">The Forge</div>
+      </div>
+      <div class="port-info">
+        <div class="port-type">Property Showcase &middot; Real Estate</div>
+        <h3>The Forge Somerset</h3>
+        <p>A premium residential property website featuring interactive galleries, smooth animations, and an elegant design for showcasing luxury homes.</p>
+        <div class="port-tags">
+          <span class="ptag pt1">Real Estate</span><span class="ptag pt2">Property Showcase</span>
+          <span class="ptag pt3">Interactive Design</span><span class="ptag pt5">Premium Build</span>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1032,6 +1047,13 @@ function openPreview(site){
     const ex=inner.querySelector('.partico-fallback');if(ex)ex.remove();
     const fb=document.createElement('div');fb.className='partico-fallback';
     fb.innerHTML='<h3>partico<span style="color:var(--neon)">.</span>app</h3><p>External sites open in a new tab.</p><a href="https://partico.app" target="_blank" rel="noopener">Visit partico.app ↗</a>';
+    inner.appendChild(fb);
+  } else if(site==='forge'){
+    frame.style.display='block';
+    const ex=inner.querySelector('.forge-fallback');if(ex)ex.remove();
+    frame.src='https://the-forge-somerset.vercel.app/';
+    const fb=document.createElement('div');fb.className='forge-fallback';
+    fb.innerHTML='<a href="https://the-forge-somerset.vercel.app/" target="_blank" rel="noopener" style="position:absolute;top:20px;right:20px;padding:10px 20px;background:var(--neon);color:var(--dark);text-decoration:none;border-radius:4px;font-weight:600;z-index:10;">Visit Full Site ↗</a>';
     inner.appendChild(fb);
   }
   modal.classList.add('open');document.body.style.overflow='hidden';
