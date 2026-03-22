@@ -57,8 +57,8 @@ app.post('/api/auth/signup', async (req, res) => {
   try {
     const { email, username, firstName, lastName, phone, password } = req.body;
 
-    if (!email || !password || !username) {
-      return res.status(400).json({ error: 'Email, username, and password required' });
+    if (!email || !password || !username || !firstName || !lastName || !phone) {
+      return res.status(400).json({ error: 'All fields required' });
     }
 
     // Check if email already exists
