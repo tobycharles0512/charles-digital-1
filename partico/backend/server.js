@@ -55,6 +55,12 @@ async function sendEmail(to, subject, html) {
 // Signup: Send verification email
 app.post('/api/auth/signup', async (req, res) => {
   try {
+    // Check if Supabase is configured
+    if (!process.env.SUPABASE_URL || process.env.SUPABASE_URL.includes('placeholder')) {
+      console.error('Supabase not configured - SUPABASE_URL missing or placeholder');
+      return res.status(500).json({ error: 'Server configuration error. Please contact support.' });
+    }
+
     const { email, username, firstName, lastName, phone, password } = req.body;
 
     if (!email || !password || !username) {
@@ -62,22 +68,32 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 
     // Check if email already exists
-    const { data: existingEmail } = await supabase
+    const { data: existingEmail, error: emailCheckError } = await supabase
       .from('users')
       .select('id')
       .eq('email', email.toLowerCase())
       .single();
+
+    if (emailCheckError && emailCheckError.code !== 'PGRST116') {
+      console.error('Email check error:', emailCheckError);
+      return res.status(500).json({ error: 'Database error' });
+    }
 
     if (existingEmail) {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
     // Check if username already exists
-    const { data: existingUsername } = await supabase
+    const { data: existingUsername, error: usernameCheckError } = await supabase
       .from('users')
       .select('id')
       .eq('username', username.toLowerCase())
       .single();
+
+    if (usernameCheckError && usernameCheckError.code !== 'PGRST116') {
+      console.error('Username check error:', usernameCheckError);
+      return res.status(500).json({ error: 'Database error' });
+    }
 
     if (existingUsername) {
       return res.status(400).json({ error: 'Username already taken' });
@@ -113,7 +129,7 @@ app.post('/api/auth/signup', async (req, res) => {
 
     if (verifyError) {
       console.error('Verification insert error:', verifyError);
-      return res.status(500).json({ error: 'Failed to create verification request' });
+      return res.status(500).json({ error: 'Failed to create verification request. Please try again later.' });
     }
 
     // Send verification email
@@ -132,7 +148,11 @@ app.post('/api/auth/signup', async (req, res) => {
     res.json({ message: 'Verification email sent', email });
   } catch (error) {
     console.error('Signup error:', error);
-    res.status(500).json({ error: 'Signup failed' });
+    if (error.message && error.message.includes('ENOTFOUND')) {
+      res.status(500).json({ error: 'Server connection error. Please try again later.' });
+    } else {
+      res.status(500).json({ error: 'Signup failed. Please try again later.' });
+    }
   }
 });
 
