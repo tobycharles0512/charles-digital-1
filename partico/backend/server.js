@@ -231,20 +231,15 @@ app.post('/api/auth/verify-signup', async (req, res) => {
     const hashedPassword = await bcryptjs.hash(verifyRequest.password, 10);
 
     // Create user
-    const userId = Math.random().toString(36).substring(7); // Simple ID generation
-    console.log('Attempting to create user:', { userId, email: email.toLowerCase(), username: verifyRequest.username });
+    console.log('Attempting to create user:', { email: email.toLowerCase(), username: verifyRequest.username });
 
     const { error: createError } = await supabase
       .from('users')
       .insert([
         {
-          id: userId,
           email: email.toLowerCase(),
           username: verifyRequest.username,
           password: hashedPassword,
-          firstName: verifyRequest.firstName || null,
-          lastName: verifyRequest.lastName || null,
-          phone: verifyRequest.phone || null,
           createdAt: new Date().toISOString(),
         },
       ]);
@@ -258,7 +253,7 @@ app.post('/api/auth/verify-signup', async (req, res) => {
       return res.status(500).json({ error: 'Failed to create account' });
     }
 
-    console.log('User created successfully:', userId);
+    console.log('User created successfully');
 
     // Delete verification request
     await supabase
@@ -269,7 +264,7 @@ app.post('/api/auth/verify-signup', async (req, res) => {
 
     // Generate JWT
     const token = jwt.sign(
-      { userId, email: email.toLowerCase(), username: verifyRequest.username },
+      { email: email.toLowerCase(), username: verifyRequest.username },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -278,12 +273,8 @@ app.post('/api/auth/verify-signup', async (req, res) => {
       success: true,
       token,
       user: {
-        id: userId,
         email: email.toLowerCase(),
         username: verifyRequest.username,
-        firstName: verifyRequest.firstName,
-        lastName: verifyRequest.lastName,
-        phone: verifyRequest.phone,
       },
     });
   } catch (error) {
@@ -323,7 +314,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Generate JWT
     const token = jwt.sign(
-      { userId: user.id, email: user.email, username: user.username },
+      { email: user.email, username: user.username },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -332,12 +323,8 @@ app.post('/api/auth/login', async (req, res) => {
       success: true,
       token,
       user: {
-        id: user.id,
         email: user.email,
         username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
       },
     });
   } catch (error) {
@@ -358,8 +345,8 @@ app.get('/api/auth/me', async (req, res) => {
 
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, username, firstName, lastName, phone, createdAt')
-      .eq('id', decoded.userId)
+      .select('email, username, createdAt')
+      .eq('email', decoded.email)
       .single();
 
     if (error || !user) {
