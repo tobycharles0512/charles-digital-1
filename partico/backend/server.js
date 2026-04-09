@@ -25,12 +25,15 @@ function generateVerificationCode() {
 
 // Helper: Send email via Resend
 async function sendEmail(to, subject, html) {
+  console.log('[sendEmail] Resend API key configured:', !!RESEND_API_KEY);
+
   if (!RESEND_API_KEY) {
     console.log(`[Mock Email] To: ${to}, Subject: ${subject}`);
     return true;
   }
 
   try {
+    console.log('[sendEmail] Sending email via Resend to:', to);
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -45,9 +48,14 @@ async function sendEmail(to, subject, html) {
       }),
     });
 
+    console.log('[sendEmail] Resend response status:', response.status);
+    const resendData = await response.json();
+    console.log('[sendEmail] Resend response:', JSON.stringify(resendData));
+
     return response.ok;
   } catch (error) {
-    console.error('Email send error:', error);
+    console.error('[sendEmail] Email send error:', error.message);
+    console.error('[sendEmail] Error details:', error);
     return false;
   }
 }
@@ -55,27 +63,38 @@ async function sendEmail(to, subject, html) {
 // Signup: Send verification email
 app.post('/api/auth/signup', async (req, res) => {
   try {
+    console.log('=== SIGNUP REQUEST RECEIVED ===');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Request body keys:', Object.keys(req.body));
+
     // Check if Supabase is configured
+    console.log('SUPABASE_URL configured:', !!process.env.SUPABASE_URL);
+    console.log('SUPABASE_URL value:', process.env.SUPABASE_URL ? process.env.SUPABASE_URL.substring(0, 20) + '...' : 'NOT SET');
+
     if (!process.env.SUPABASE_URL || process.env.SUPABASE_URL.includes('placeholder')) {
       console.error('Supabase not configured - SUPABASE_URL missing or placeholder');
       return res.status(500).json({ error: 'Server configuration error. Please contact support.' });
     }
 
     const { email, username, firstName, lastName, phone, password } = req.body;
+    console.log('Received:', { email, username, passwordLength: password ? password.length : 0, firstName, lastName, phone });
 
     if (!email || !password || !username) {
       return res.status(400).json({ error: 'Email, username, and password required' });
     }
 
     // Check if email already exists
+    console.log('Checking if email already exists:', email.toLowerCase());
     const { data: existingEmail, error: emailCheckError } = await supabase
       .from('users')
       .select('id')
       .eq('email', email.toLowerCase())
       .single();
 
+    console.log('Email check result:', { existingEmail: !!existingEmail, errorCode: emailCheckError?.code, errorMessage: emailCheckError?.message });
+
     if (emailCheckError && emailCheckError.code !== 'PGRST116') {
-      console.error('Email check error:', emailCheckError);
+      console.error('Email check error (code !== PGRST116):', emailCheckError);
       return res.status(500).json({ error: 'Database error' });
     }
 
@@ -84,14 +103,17 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 
     // Check if username already exists
+    console.log('Checking if username already exists:', username.toLowerCase());
     const { data: existingUsername, error: usernameCheckError } = await supabase
       .from('users')
       .select('id')
       .eq('username', username.toLowerCase())
       .single();
 
+    console.log('Username check result:', { existingUsername: !!existingUsername, errorCode: usernameCheckError?.code, errorMessage: usernameCheckError?.message });
+
     if (usernameCheckError && usernameCheckError.code !== 'PGRST116') {
-      console.error('Username check error:', usernameCheckError);
+      console.error('Username check error (code !== PGRST116):', usernameCheckError);
       return res.status(500).json({ error: 'Database error' });
     }
 
@@ -101,12 +123,20 @@ app.post('/api/auth/signup', async (req, res) => {
 
     // Generate verification code
     const code = generateVerificationCode();
+    console.log('Generated verification code');
 
     // Delete any existing verification requests for this email (to allow resend)
-    await supabase
+    console.log('Deleting existing verification requests for email');
+    const { error: deleteError } = await supabase
       .from('verification_requests')
       .delete()
       .eq('email', email.toLowerCase());
+
+    if (deleteError) {
+      console.error('Error deleting old requests:', deleteError);
+    } else {
+      console.log('Successfully deleted old requests');
+    }
 
     // Store verification request
     const verificationData = {
@@ -123,14 +153,22 @@ app.post('/api/auth/signup', async (req, res) => {
     if (lastName) verificationData.lastName = lastName;
     if (phone) verificationData.phone = phone;
 
+    console.log('Attempting to insert verification request');
+    console.log('Verification data keys:', Object.keys(verificationData));
+
     const { error: verifyError } = await supabase
       .from('verification_requests')
       .insert([verificationData]);
 
     if (verifyError) {
-      console.error('Verification insert error:', verifyError);
+      console.error('Verification insert error:', JSON.stringify(verifyError, null, 2));
+      console.error('Error code:', verifyError?.code);
+      console.error('Error message:', verifyError?.message);
+      console.error('Error details:', verifyError?.details);
       return res.status(500).json({ error: 'Failed to create verification request. Please try again later.' });
     }
+
+    console.log('Successfully inserted verification request');
 
     // Send verification email
     const emailHtml = `
@@ -143,11 +181,16 @@ app.post('/api/auth/signup', async (req, res) => {
       </div>
     `;
 
-    await sendEmail(email, 'Verify your Partico account', emailHtml);
+    console.log('Attempting to send verification email to:', email);
+    const emailSent = await sendEmail(email, 'Verify your Partico account', emailHtml);
+    console.log('Email send result:', emailSent);
 
     res.json({ message: 'Verification email sent', email });
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error('=== SIGNUP ERROR ===');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Full error:', JSON.stringify(error, null, 2));
     if (error.message && error.message.includes('ENOTFOUND')) {
       res.status(500).json({ error: 'Server connection error. Please try again later.' });
     } else {
