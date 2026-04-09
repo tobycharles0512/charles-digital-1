@@ -232,6 +232,8 @@ app.post('/api/auth/verify-signup', async (req, res) => {
 
     // Create user
     const userId = Math.random().toString(36).substring(7); // Simple ID generation
+    console.log('Attempting to create user:', { userId, email: email.toLowerCase(), username: verifyRequest.username });
+
     const { error: createError } = await supabase
       .from('users')
       .insert([
@@ -248,9 +250,15 @@ app.post('/api/auth/verify-signup', async (req, res) => {
       ]);
 
     if (createError) {
-      console.error('User creation error:', createError);
+      console.error('=== USER CREATION ERROR ===');
+      console.error('Error code:', createError?.code);
+      console.error('Error message:', createError?.message);
+      console.error('Error details:', createError?.details);
+      console.error('Full error:', JSON.stringify(createError, null, 2));
       return res.status(500).json({ error: 'Failed to create account' });
     }
+
+    console.log('User created successfully:', userId);
 
     // Delete verification request
     await supabase
