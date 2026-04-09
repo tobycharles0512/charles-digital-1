@@ -240,7 +240,6 @@ app.post('/api/auth/verify-signup', async (req, res) => {
           email: email.toLowerCase(),
           username: verifyRequest.username,
           password: hashedPassword,
-          createdAt: new Date().toISOString(),
         },
       ]);
 
@@ -345,7 +344,7 @@ app.get('/api/auth/me', async (req, res) => {
 
     const { data: user, error } = await supabase
       .from('users')
-      .select('email, username, createdAt')
+      .select('email, username')
       .eq('email', decoded.email)
       .single();
 
