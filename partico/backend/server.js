@@ -429,6 +429,20 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Diagnostic endpoint - shows configuration status (safe for production)
+app.get('/api/diag/config', (req, res) => {
+  res.json({
+    timestamp: new Date().toISOString(),
+    nodeEnv: process.env.NODE_ENV,
+    supabaseUrl: process.env.SUPABASE_URL ? process.env.SUPABASE_URL.substring(0, 30) + '...' : 'NOT SET',
+    supabaseUrlSet: !!process.env.SUPABASE_URL,
+    supabaseKeySet: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    jwtSecretSet: !!process.env.JWT_SECRET,
+    resendApiKeySet: !!process.env.RESEND_API_KEY,
+    port: process.env.PORT || 3001,
+  });
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
