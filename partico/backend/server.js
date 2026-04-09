@@ -231,12 +231,14 @@ app.post('/api/auth/verify-signup', async (req, res) => {
     const hashedPassword = await bcryptjs.hash(verifyRequest.password, 10);
 
     // Create user
-    console.log('Attempting to create user:', { email: email.toLowerCase(), username: verifyRequest.username });
+    const userId = Math.random().toString(36).substring(7); // Generate simple ID
+    console.log('Attempting to create user:', { userId, email: email.toLowerCase(), username: verifyRequest.username });
 
     const { error: createError } = await supabase
       .from('users')
       .insert([
         {
+          id: userId,
           email: email.toLowerCase(),
           username: verifyRequest.username,
           password: hashedPassword,
