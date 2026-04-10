@@ -232,7 +232,7 @@ app.post('/api/auth/verify-signup', async (req, res) => {
 
     // Create user
     const userId = Math.random().toString(36).substring(7); // Generate simple ID
-    console.log('Attempting to create user:', { userId, email: email.toLowerCase(), username: verifyRequest.username });
+    console.log('Attempting to create user:', { userId, email: email.toLowerCase(), username: verifyRequest.username, timestamp: new Date().toISOString() });
 
     const { error: createError } = await supabase
       .from('users')
