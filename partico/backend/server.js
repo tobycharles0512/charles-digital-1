@@ -234,7 +234,7 @@ app.post('/api/auth/verify-signup', async (req, res) => {
     const userId = Math.random().toString(36).substring(7); // Generate simple ID
     console.log('Attempting to create user:', { userId, email: email.toLowerCase(), username: verifyRequest.username, timestamp: new Date().toISOString() });
 
-    const { error: createError } = await supabase
+    const insertResponse = await supabase
       .from('users')
       .insert([
         {
@@ -245,6 +245,12 @@ app.post('/api/auth/verify-signup', async (req, res) => {
         },
       ]);
 
+    const { error: createError, data: insertData } = insertResponse;
+
+    console.log('=== INSERT RESPONSE ===');
+    console.log('Error:', createError ? JSON.stringify(createError, null, 2) : 'null');
+    console.log('Data:', JSON.stringify(insertData, null, 2));
+
     if (createError) {
       console.error('=== USER CREATION ERROR ===');
       console.error('Error code:', createError?.code);
@@ -254,7 +260,25 @@ app.post('/api/auth/verify-signup', async (req, res) => {
       return res.status(500).json({ error: 'Failed to create account' });
     }
 
-    console.log('User created successfully');
+    // CRITICAL: Verify the insert actually persisted to database
+    console.log('=== VERIFYING USER PERSISTED TO DATABASE ===');
+    const { data: verifyUser, error: verifyError } = await supabase
+      .from('users')
+      .select('id, email, username')
+      .eq('id', userId)
+      .single();
+
+    console.log('Verification query - Error:', verifyError ? JSON.stringify(verifyError, null, 2) : 'null');
+    console.log('Verification query - User found:', verifyUser ? JSON.stringify(verifyUser, null, 2) : 'null');
+
+    if (verifyError || !verifyUser) {
+      console.error('=== CRITICAL: USER NOT FOUND AFTER INSERT ===');
+      console.error('Attempted to create user with ID:', userId);
+      console.error('But could not read it back from database');
+      console.error('Verify error:', verifyError);
+    } else {
+      console.log('User created successfully and verified in database');
+    }
 
     // Delete verification request
     await supabase
